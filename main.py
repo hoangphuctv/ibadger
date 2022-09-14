@@ -115,22 +115,31 @@ class App:
         img = pygame.image.load(self.img_manager.current()).convert()
         rect = img.get_rect()
         sw, sh = self.screen.get_size()
-
-        start_x = (sw - rect[2]) / 2
-        start_y = (sh - rect[3]) / 2
+        img_width = rect[2]
+        img_height = rect[3]
+        max_width = img_width
+        max_height = img_height
+        
+        if sw < img_width:
+            max_width = sw
+            max_height = int(img_height * (sw/img_width))
+        
+        start_x = (sw - max_width) / 2
+        start_y = (sh - max_height) / 2
+        
+        img = pygame.transform.scale(img, (max_width, max_height))
         self.screen.blit(img, (start_x, start_y))
 
         text = (
             str(self.img_manager.get_index() + 1) + "/" + str(self.img_manager.count())
         )
-        self.show_text(text, 20, 20)
+        self.show_text(text, sw-50, sh-50)
         pygame.display.flip()
 
     def on_mouse_click(self, event):
-        match event.button:
-            case Mouse.LEFT:
+        if event.button == Mouse.LEFT:
                 self.show_next_image()
-            case Mouse.RIGHT:
+        elif event.button == Mouse.RIGHT:
                 self.show_prev_image()
 
     def quit(self):
