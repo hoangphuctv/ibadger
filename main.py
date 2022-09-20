@@ -155,18 +155,16 @@ class App:
                     self.is_run = False
                 elif i.type == pygame.KEYDOWN:
                     if i.key == pygame.K_SPACE:
-                        self.screen.fill(Color.gray)
-
                         if self.is_fullscreen:
                             self.screen = pygame.display.set_mode((self.X, self.Y))
                             self.is_fullscreen = False
+                            self.show_image()
                         else:
                             self.screen = pygame.display.set_mode(
                                 (0, 0), pygame.FULLSCREEN
                             )
                             self.is_fullscreen = True
-
-                        self.show_image()
+                    self.show_image()
 
                     if i.key == pygame.K_ESCAPE:
                         self.quit()
