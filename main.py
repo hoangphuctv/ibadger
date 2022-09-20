@@ -92,7 +92,9 @@ class App:
         self.screen = pygame.display.set_mode((self.X, self.Y))
         pygame.display.set_caption(APP_NAME)
         self.show_image()
-        pygame.display.set_icon(pygame.image.load(os.path.join(APP_ROOT, "app.png")))
+        app_img = os.path.join(APP_ROOT, "app.png")
+        if os.path.exists(app_img):
+            pygame.display.set_icon(pygame.image.load())
 
     def show_text(self, text, pos1, pos2):
         font = pygame.font.SysFont(None, 24)
