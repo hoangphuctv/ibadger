@@ -96,10 +96,16 @@ class App:
         if os.path.exists(app_img):
             pygame.display.set_icon(pygame.image.load(app_img))
 
-    def show_text(self, text, pos1, pos2):
+    def show_text(self, text, pos1, pos2, center=False):
         font = pygame.font.SysFont(None, 24)
-        img = font.render(text, True, Color.white)
-        self.screen.blit(img, (pos1, pos2))
+        textimg = font.render(text, True, Color.white)
+        img_width = textimg.get_rect()[2]
+        # img_height = img.get_rect()[3]
+        sw, sh = self.screen.get_size()
+        if center:
+            self.screen.blit(textimg, ((sw/2)-img_width, pos2))
+        else:
+            self.screen.blit(textimg, (pos1, pos2))
 
     def show_prev_image(self):
         self.img_manager.prev()
@@ -111,12 +117,16 @@ class App:
 
     def show_image(self):
         self.screen.fill(Color.gray)
+        sw, sh = self.screen.get_size()
         imgpath = self.img_manager.current()
         if imgpath is None:
+            self.show_text('No image', 0, sh/2, True)
+            pygame.display.flip()
             return
+
         img = pygame.image.load(self.img_manager.current()).convert()
         rect = img.get_rect()
-        sw, sh = self.screen.get_size()
+        
         img_width = rect[2]
         img_height = rect[3]
         max_width = img_width
@@ -135,7 +145,7 @@ class App:
         text = (
             str(self.img_manager.get_index() + 1) + "/" + str(self.img_manager.count())
         )
-        self.show_text(text, sw-50, sh-50)
+        self.show_text(text, 20, 20)
         pygame.display.flip()
 
     def on_mouse_click(self, event):
