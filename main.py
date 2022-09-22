@@ -2,13 +2,15 @@ import pygame
 import os
 import sys
 
-APP_ROOT = os.path.dirname(os.path.realpath(__file__))
+APP_ROOT = os.path.dirname(os.path.realpath(sys.argv[0]))
 APP_NAME = "iBadger"
+
 
 class Color:
     white = 255, 255, 255
     black = 0, 0, 0
     gray = 100, 100, 100
+
 
 class Mouse:
     LEFT = 1
@@ -16,6 +18,7 @@ class Mouse:
     RIGHT = 3
     SCROLL_UP = 4
     SCROLL_DOWN = 5
+
 
 class ImageManager:
     index = 0
@@ -46,9 +49,8 @@ class ImageManager:
                 continue
             if self.active_file != "" and self.active_file == x:
                 self.index = self.count()
-            
-            self.files.append(os.path.join(active_dir, x))
 
+            self.files.append(os.path.join(active_dir, x))
 
     def count(self):
         return len(self.files)
@@ -77,6 +79,9 @@ class ImageManager:
     def get_index(self):
         return self.index
 
+    def get_loc(self):
+        return (self.get_index() + 1, self.count())
+
 
 class App:
     is_run = True
@@ -92,7 +97,9 @@ class App:
         self.screen = pygame.display.set_mode((self.X, self.Y))
         pygame.display.set_caption(APP_NAME)
         self.show_image()
-        pygame.display.set_icon(pygame.image.load(os.path.join(APP_ROOT, "app.png")))
+        imageapp = os.path.join(APP_ROOT, "app.png")
+        if os.path.isfile(imageapp):
+            pygame.display.set_icon(pygame.image.load(imageapp))
 
     def show_text(self, text, pos1, pos2):
         font = pygame.font.SysFont(None, 24)
@@ -119,28 +126,31 @@ class App:
         img_height = rect[3]
         max_width = img_width
         max_height = img_height
-        
+
         if sw < img_width:
             max_width = sw
-            max_height = int(img_height * (sw/img_width))
-        
+            max_height = int(img_height * (sw / img_width))
+
         start_x = (sw - max_width) / 2
         start_y = (sh - max_height) / 2
-        
+
         img = pygame.transform.scale(img, (max_width, max_height))
         self.screen.blit(img, (start_x, start_y))
-
-        text = (
-            str(self.img_manager.get_index() + 1) + "/" + str(self.img_manager.count())
-        )
-        self.show_text(text, sw-50, sh-50)
+        loc = self.img_manager.get_loc()
+        print(loc)
+        if loc[1] == 0:
+            text = "no image found"
+        else:
+            text = "%s/%s" % loc
+        
+        self.show_text(text, 20, sh - 30)
         pygame.display.flip()
 
     def on_mouse_click(self, event):
         if event.button == Mouse.LEFT:
-                self.show_next_image()
+            self.show_next_image()
         elif event.button == Mouse.RIGHT:
-                self.show_prev_image()
+            self.show_prev_image()
 
     def quit(self):
         pygame.quit()
