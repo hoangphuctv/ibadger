@@ -101,10 +101,16 @@ class App:
         if os.path.isfile(imageapp):
             pygame.display.set_icon(pygame.image.load(imageapp))
 
-    def show_text(self, text, pos1, pos2):
+    def show_text(self, text, pos1, pos2, center=False):
         font = pygame.font.SysFont(None, 24)
-        img = font.render(text, True, Color.white)
-        self.screen.blit(img, (pos1, pos2))
+        textimg = font.render(text, True, Color.white)
+        img_width = textimg.get_rect()[2]
+        # img_height = img.get_rect()[3]
+        sw, sh = self.screen.get_size()
+        if center:
+            self.screen.blit(textimg, ((sw/2)-img_width, pos2))
+        else:
+            self.screen.blit(textimg, (pos1, pos2))
 
     def show_prev_image(self):
         self.img_manager.prev()
@@ -116,12 +122,16 @@ class App:
 
     def show_image(self):
         self.screen.fill(Color.gray)
+        sw, sh = self.screen.get_size()
         imgpath = self.img_manager.current()
         if imgpath is None:
+            self.show_text('No image', 0, sh/2, True)
+            pygame.display.flip()
             return
+
         img = pygame.image.load(self.img_manager.current()).convert()
         rect = img.get_rect()
-        sw, sh = self.screen.get_size()
+        
         img_width = rect[2]
         img_height = rect[3]
         max_width = img_width
@@ -163,18 +173,16 @@ class App:
                     self.is_run = False
                 elif i.type == pygame.KEYDOWN:
                     if i.key == pygame.K_SPACE:
-                        self.screen.fill(Color.gray)
-
                         if self.is_fullscreen:
                             self.screen = pygame.display.set_mode((self.X, self.Y))
                             self.is_fullscreen = False
+                            self.show_image()
                         else:
                             self.screen = pygame.display.set_mode(
                                 (0, 0), pygame.FULLSCREEN
                             )
                             self.is_fullscreen = True
-
-                        self.show_image()
+                    self.show_image()
 
                     if i.key == pygame.K_ESCAPE:
                         self.quit()
