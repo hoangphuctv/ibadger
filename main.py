@@ -147,7 +147,6 @@ class App:
         img = pygame.transform.scale(img, (max_width, max_height))
         self.screen.blit(img, (start_x, start_y))
         loc = self.img_manager.get_loc()
-        print(loc)
         if loc[1] == 0:
             text = "no image found"
         else:
