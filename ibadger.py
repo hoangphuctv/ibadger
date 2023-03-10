@@ -151,7 +151,7 @@ class App:
         if loc[1] == 0:
             text = "no image found"
         else:
-            text = "%s/%s" % loc
+            text = "%s/%s | %s" % (loc[0], loc[1], self.img_manager.current())
         
         self.show_text(text, 20, sh - 30)
         pygame.display.flip()
