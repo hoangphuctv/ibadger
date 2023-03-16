@@ -21,10 +21,6 @@ class Mouse:
     SCROLL_DOWN = 5
 
 
-class ImageAction:
-    def scale(self, img, to_width, to_height):
-        return pygame.transform.smoothscale(img, (to_width, to_height))
-
 
 class ImageManager:
     index = 0
