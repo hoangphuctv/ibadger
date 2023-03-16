@@ -158,6 +158,10 @@ class App:
         if sw < img_width:
             self.max_width = sw
             self.max_height = int(img_height * (sw / img_width))
+        
+        if sh < img_height:
+            self.max_width = int(img_width * (sh / img_height))
+            self.max_height = sh
 
         self.start_x = (sw - self.max_width) / 2
         self.start_y = (sh - self.max_height) / 2
