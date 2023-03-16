@@ -185,19 +185,16 @@ class App:
 
     def rotate_image_right(self):
         self.is_change = True
-        print ("is_change " + str(self.is_change))
         
         self.img = pygame.transform.rotate(self.img, 90)
         self.show_image();
 
     def rotate_image_left(self):
         self.is_change = True
-        print ("is_change " + str(self.is_change))
         self.img = pygame.transform.rotate(self.img, -90)
         self.show_image();
         
     def save_change(self):
-        print ("save_change is_change " + str(self.is_change))
         if self.is_change:
             pygame.image.save(self.img, self.img_manager.current())
             self.show_status('save ok ' + self.img_manager.current())
