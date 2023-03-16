@@ -215,8 +215,8 @@ class App:
             pygame.K_ESCAPE: self.quit,
             pygame.K_RIGHT: self.show_next_image,
             pygame.K_LEFT: self.show_prev_image,
-            pygame.K_UP: self.rotate_image_right,
-            pygame.K_DOWN: self.rotate_image_left,
+            pygame.K_r: self.rotate_image_right,
+            pygame.K_l: self.rotate_image_left,
             pygame.K_s: self.save_change,
         }
         do_action = key_map.get(event.key, None)
