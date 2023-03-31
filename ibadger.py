@@ -22,7 +22,7 @@ class Mouse:
     SCROLL_DOWN = 5
 
 
-def scale_img(w, h, maxw, maxh):
+def scale_img_size(w, h, maxw, maxh):
     if w > maxw:
         w , h = maxw, h * maxw / w
 
@@ -132,13 +132,13 @@ class App:
 
     def show_prev_image(self):
         self.img_manager.prev()
-        self.img_org = pygame.image.load(self.img_manager.current()).convert()
+        self.img_org = pygame.image.load(self.img_manager.current()).convert_alpha()
         self.is_change = False
         self.show_image()
 
     def show_next_image(self):
         self.img_manager.next()
-        self.img_org = pygame.image.load(self.img_manager.current()).convert()
+        self.img_org = pygame.image.load(self.img_manager.current()).convert_alpha()
         self.is_change = False
         self.show_image()
 
@@ -152,19 +152,19 @@ class App:
             return
 
         if self.img_org is None:
-            self.img_org = pygame.image.load(self.img_manager.current()).convert()
+            self.img_org = pygame.image.load(self.img_manager.current()).convert_alpha()
 
         self.img = self.img_org
         rect = self.img.get_rect()
 
         img_width = rect[2]
         img_height = rect[3]
-        self.max_width, self.max_height = scale_img(img_width, img_height, sw, sh)
+        self.max_width, self.max_height = scale_img_size(img_width, img_height, sw, sh)
 
         self.start_x = (sw - self.max_width) / 2
         self.start_y = (sh - self.max_height) / 2
 
-        self.img = pygame.transform.scale(self.img, (self.max_width, self.max_height))
+        self.img = pygame.transform.smoothscale(self.img, (self.max_width, self.max_height))
         self.screen.blit(self.img, (self.start_x, self.start_y))
         loc = self.img_manager.get_loc()
         if loc[1] == 0:
