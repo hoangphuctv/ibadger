@@ -5,6 +5,7 @@ import sys
 
 APP_ROOT = os.path.dirname(os.path.realpath(sys.argv[0]))
 APP_NAME = "iBadger"
+SUPPORTED_EXT = (".jpg", ".png", "jpeg", ".bmp")
 
 
 class Color:
@@ -20,6 +21,14 @@ class Mouse:
     SCROLL_UP = 4
     SCROLL_DOWN = 5
 
+
+def scale_img(w, h, maxw, maxh):
+    if w > maxw:
+        w , h = maxw, h * maxw / w
+
+    if h > maxh:
+        w , h = w * maxh / h, maxh
+    return w, h
 
 
 class ImageManager:
@@ -45,7 +54,7 @@ class ImageManager:
         allfiles = os.listdir(active_dir)
 
         for i, x in enumerate(allfiles):
-            if not x.endswith((".jpg", ".png", "jpeg")):
+            if not x.lower().endswith(SUPPORTED_EXT):
                 continue
             if x is None or x == "":
                 continue
@@ -92,6 +101,7 @@ class App:
     Y = 800
     img_manager = None
     img = None
+    img_org = None
     img_path = None
     screen = None
     start_x = 0
@@ -122,13 +132,13 @@ class App:
 
     def show_prev_image(self):
         self.img_manager.prev()
-        self.img = pygame.image.load(self.img_manager.current()).convert()
+        self.img_org = pygame.image.load(self.img_manager.current()).convert()
         self.is_change = False
         self.show_image()
 
     def show_next_image(self):
         self.img_manager.next()
-        self.img = pygame.image.load(self.img_manager.current()).convert()
+        self.img_org = pygame.image.load(self.img_manager.current()).convert()
         self.is_change = False
         self.show_image()
 
@@ -141,23 +151,15 @@ class App:
             pygame.display.flip()
             return
 
-        if self.img is None :
-            self.img = pygame.image.load(self.img_manager.current()).convert()
+        if self.img_org is None:
+            self.img_org = pygame.image.load(self.img_manager.current()).convert()
 
+        self.img = self.img_org
         rect = self.img.get_rect()
 
         img_width = rect[2]
         img_height = rect[3]
-        self.max_width = img_width
-        self.max_height = img_height
-
-        if sw < img_width:
-            self.max_width = sw
-            self.max_height = int(img_height * (sw / img_width))
-        
-        if sh < img_height:
-            self.max_width = int(img_width * (sh / img_height))
-            self.max_height = sh
+        self.max_width, self.max_height = scale_img(img_width, img_height, sw, sh)
 
         self.start_x = (sw - self.max_width) / 2
         self.start_y = (sh - self.max_height) / 2
@@ -169,7 +171,7 @@ class App:
             text = "no image found"
         else:
             text = "%s/%s | %s" % (loc[0], loc[1], self.img_manager.current())
-        
+
         self.show_text(text, 20, 30)
         pygame.display.flip()
 
@@ -181,21 +183,21 @@ class App:
 
     def rotate_image_right(self):
         self.is_change = True
-        
-        self.img = pygame.transform.rotate(self.img, 90)
-        self.show_image();
+
+        self.img_org = pygame.transform.rotate(self.img_org, 90)
+        self.show_image()
 
     def rotate_image_left(self):
         self.is_change = True
-        self.img = pygame.transform.rotate(self.img, -90)
-        self.show_image();
-        
+        self.img_org = pygame.transform.rotate(self.img_org, -90)
+        self.show_image()
+
     def save_change(self):
         if self.is_change:
-            pygame.image.save(self.img, self.img_manager.current())
-            self.show_status('save ok ' + self.img_manager.current())
+            pygame.image.save(self.img_org, self.img_manager.current())
+            self.show_status("save ok " + self.img_manager.current())
             self.is_change = False
-        
+
     def on_mouse_click(self, event):
         if event.button == Mouse.LEFT:
             self.show_next_image()
