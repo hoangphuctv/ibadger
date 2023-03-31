@@ -1,2 +1,2 @@
 md dist
-pyinstaller --onefile --noconsole ibadger.py
+pyinstaller --onefile --icon=app.ico --noconsole ibadger.py
