@@ -2,10 +2,28 @@
 import pygame
 import os
 import sys
+from datetime import datetime
 
 APP_ROOT = os.path.dirname(os.path.realpath(sys.argv[0]))
 APP_NAME = "iBadger"
 SUPPORTED_EXT = (".jpg", ".png", "jpeg", ".bmp")
+DEBUG = True
+
+def debug(txt):
+    if not DEBUG:
+        return
+    now = datetime.now()
+    dt_string = now.strftime("%Y-%m-%d %H:%M:%S")
+    print(dt_string, txt)
+
+
+def scale_img_size(w, h, maxw, maxh, ratio=1):
+    if w > maxw:
+        w, h = maxw, h * maxw / w
+
+    if h > maxh:
+        w, h = w * maxh / h, maxh
+    return w * ratio, h * ratio
 
 
 class Color:
@@ -20,15 +38,6 @@ class Mouse:
     RIGHT = 3
     SCROLL_UP = 4
     SCROLL_DOWN = 5
-
-
-def scale_img_size(w, h, maxw, maxh):
-    if w > maxw:
-        w , h = maxw, h * maxw / w
-
-    if h > maxh:
-        w , h = w * maxh / h, maxh
-    return w, h
 
 
 class ImageManager:
@@ -109,6 +118,7 @@ class App:
     max_width = 0
     max_height = 0
     is_change = False
+    zoom_level = 1
 
     def __init__(self, active_dir):
         pygame.init()
@@ -119,6 +129,27 @@ class App:
         imageapp = os.path.join(APP_ROOT, "app.png")
         if os.path.isfile(imageapp):
             pygame.display.set_icon(pygame.image.load(imageapp))
+
+    def zoom_level_reset(self):
+        self.zoom_level = 1
+        debug("zoom_level " + str(self.zoom_level))
+        self.show_image()
+
+    def zoom_level_increase(self):
+        if self.zoom_level > 2:
+            return
+        self.zoom_level += 0.05
+        debug("zoom_level " + str(self.zoom_level))
+        self.show_image()
+        
+
+    def zoom_level_decrease(self):
+        if self.zoom_level < 0.8:
+            return
+        self.zoom_level -= 0.05
+        debug("zoom_level " + str(self.zoom_level))
+        self.show_image()
+        
 
     def show_text(self, text, pos1, pos2, center=False):
         font = pygame.font.SysFont(None, 24)
@@ -159,18 +190,26 @@ class App:
 
         img_width = rect[2]
         img_height = rect[3]
-        self.max_width, self.max_height = scale_img_size(img_width, img_height, sw, sh)
+        self.max_width, self.max_height = scale_img_size(
+            img_width, img_height, sw, sh, self.zoom_level
+        )
 
         self.start_x = (sw - self.max_width) / 2
         self.start_y = (sh - self.max_height) / 2
 
-        self.img = pygame.transform.smoothscale(self.img, (self.max_width, self.max_height))
+        self.img = pygame.transform.smoothscale(
+            self.img, (self.max_width, self.max_height)
+        )
         self.screen.blit(self.img, (self.start_x, self.start_y))
         loc = self.img_manager.get_loc()
         if loc[1] == 0:
             text = "no image found"
         else:
-            text = "%s/%s | %s" % (loc[0], loc[1], os.path.basename(self.img_manager.current()))
+            text = "%s/%s | %s" % (
+                loc[0],
+                loc[1],
+                os.path.basename(self.img_manager.current()),
+            )
 
         self.show_text(text, 20, 30)
         pygame.display.flip()
@@ -203,8 +242,11 @@ class App:
             self.show_next_image()
         elif event.button == Mouse.RIGHT:
             self.show_prev_image()
+        elif event.button == Mouse.MIDDLE:
+            self.zoom_level_reset()
 
     def on_key_press(self, event):
+        debug("on_key_press = " + str(event.key))
         key_map = {
             pygame.K_SPACE: self.fullscreen,
             pygame.K_ESCAPE: self.quit,
@@ -213,6 +255,7 @@ class App:
             pygame.K_r: self.rotate_image_right,
             pygame.K_l: self.rotate_image_left,
             pygame.K_s: self.save_change,
+            pygame.K_0: self.zoom_level_reset,
         }
         do_action = key_map.get(event.key, None)
         if do_action:
@@ -242,6 +285,11 @@ class App:
                     self.on_key_press(i)
                 elif i.type == pygame.MOUSEBUTTONUP:
                     self.on_mouse_click(i)
+                elif i.type == pygame.MOUSEBUTTONDOWN:
+                    if i.button == 4:
+                        self.zoom_level_increase()
+                    elif i.button == 5:
+                        self.zoom_level_decrease()
 
         self.quit()
 
