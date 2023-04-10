@@ -9,6 +9,7 @@ APP_NAME = "iBadger"
 SUPPORTED_EXT = (".jpg", ".png", "jpeg", ".bmp")
 DEBUG = True
 
+
 def debug(txt):
     if not DEBUG:
         return
@@ -101,6 +102,11 @@ class ImageManager:
 
     def get_loc(self):
         return (self.get_index() + 1, self.count())
+    
+    def remove_path(self, path):
+        n = self.count()
+        # for 
+        
 
 
 class App:
@@ -130,6 +136,21 @@ class App:
         if os.path.isfile(imageapp):
             pygame.display.set_icon(pygame.image.load(imageapp))
 
+    def load_img(self, path="", retry=1):
+        if path == "":
+            path = self.img_manager.current()
+
+        if path is None:
+            return None
+        if retry > 3:
+            return None
+        try:
+            return pygame.image.load(path).convert_alpha()
+        except:
+            self.img_manager.removePath(path)
+            path = self.img_manager.current()
+            self.load_img(self.img_manager.current(), "", retry + 1)
+
     def zoom_level_reset(self):
         self.zoom_level = 1
         debug("zoom_level " + str(self.zoom_level))
@@ -141,7 +162,6 @@ class App:
         self.zoom_level += 0.05
         debug("zoom_level " + str(self.zoom_level))
         self.show_image()
-        
 
     def zoom_level_decrease(self):
         if self.zoom_level < 0.8:
@@ -149,7 +169,6 @@ class App:
         self.zoom_level -= 0.05
         debug("zoom_level " + str(self.zoom_level))
         self.show_image()
-        
 
     def show_text(self, text, pos1, pos2, center=False):
         font = pygame.font.SysFont(None, 24)
@@ -163,13 +182,13 @@ class App:
 
     def show_prev_image(self):
         self.img_manager.prev()
-        self.img_org = pygame.image.load(self.img_manager.current()).convert_alpha()
+        self.img_org = self.load_img()
         self.is_change = False
         self.show_image()
 
     def show_next_image(self):
         self.img_manager.next()
-        self.img_org = pygame.image.load(self.img_manager.current()).convert_alpha()
+        self.img_org = self.load_img()
         self.is_change = False
         self.show_image()
 
@@ -183,7 +202,7 @@ class App:
             return
 
         if self.img_org is None:
-            self.img_org = pygame.image.load(self.img_manager.current()).convert_alpha()
+            self.img_org = self.load_img()
 
         self.img = self.img_org
         rect = self.img.get_rect()
