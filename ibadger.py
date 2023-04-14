@@ -274,6 +274,7 @@ class App:
             pygame.K_r: self.rotate_image_right,
             pygame.K_l: self.rotate_image_left,
             pygame.K_s: self.save_change,
+            pygame.K_q: self.quit,
             pygame.K_0: self.zoom_level_reset,
         }
         do_action = key_map.get(event.key, None)
