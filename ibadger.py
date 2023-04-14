@@ -133,7 +133,7 @@ class App:
         self.img_manager = ImageManager(active_dir)
         self.screen = pygame.display.set_mode((self.X, self.Y))
         pygame.display.set_caption(APP_NAME)
-        self.fullscreen()
+        self.show_image()
         imageapp = os.path.join(APP_ROOT, "app.png")
         if os.path.isfile(imageapp):
             pygame.display.set_icon(pygame.image.load(imageapp))
