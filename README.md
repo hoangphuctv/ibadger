@@ -1,6 +1,7 @@
 # ibadger
 Image viewer
 
+![App-icon](app.png)
 
 ## Keyboard shortcut
 
