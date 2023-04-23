@@ -322,7 +322,10 @@ class App:
             self.quit()
 
     def run(self):
+        clock = pygame.time.Clock()
+
         while self.is_run:
+            clock.tick(60)
             for i in pygame.event.get():
                 if i.type == pygame.QUIT:
                     self.is_run = False
