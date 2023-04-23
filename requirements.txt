@@ -1,1 +1,2 @@
 pygame==2.3.0
+python_magic==0.4.27
