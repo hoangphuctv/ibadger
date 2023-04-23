@@ -3,6 +3,8 @@ import os
 import sys
 import threading
 from datetime import datetime
+import magic
+
 
 os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "hide"
 import pygame
@@ -70,8 +72,13 @@ class ImageManager:
     def scanfile(self):
         cwd = self.active_dir
         for f in os.listdir(cwd):
-            if os.path.isfile(os.path.join(cwd, f)) and f.lower().endswith(SUPPORTED_EXT):
-                self.files.append(os.path.join(cwd, f))
+            ff = os.path.join(cwd, f)
+            if os.path.isfile(ff) and f.lower().endswith(SUPPORTED_EXT):
+                if magic.detect_from_filename(ff).mime_type.find("image/") == -1:
+                    # not a image
+                    continue
+
+                self.files.append(ff)
                 if len(self.files) == 1:
                     app.show_image()
 
@@ -155,7 +162,7 @@ class App:
         if retry > 3:
             return None
         try:
-            debug("load_img " + path)
+            debug("load_img path:{} retry:{}".format(path, retry))
             return pygame.image.load(path).convert_alpha()
         except:
             self.img_manager.remove_path(path)
