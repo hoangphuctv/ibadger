@@ -109,7 +109,14 @@ class ImageManager:
 
     def remove_path(self, path):
         n = self.count()
-        # for
+        i = 0
+        for f in self.files:
+            if f == path:
+                return self.files.pop(i)
+
+            i = i + 1
+
+        return None                
 
 
 class App:
