@@ -38,16 +38,16 @@ def is_windows():
 
 
 def check_file(path):
-    if is_windows():
-        return True
-
     ret = subprocess.run(["file", path], text=True, capture_output=True)
     # debug("file " + path + " output=" + str(ret.stdout))
     return str(ret.stdout).strip()
 
 def is_image(path):
+    if is_windows():
+        return True
+
     file_info = check_file(path)
-    if file_info.find("image/") > -1:
+    if not file_info.find("image/") > -1:
         return True
     if file_info.find("image data") > -1:
         return True
