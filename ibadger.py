@@ -345,12 +345,14 @@ class App:
             self.is_fullscreen = True
         self.show_image()
         pygame.display.update()
+        pygame.display.flip()
+
 
     def on_resize(self):
         if self.is_fullscreen:
             debug("is_fullscreen = true")
             return
-        # debug("on_resize ")
+        debug("on_resize true")
         self.X, self.Y = self.screen.get_width(), self.screen.get_height()
         
         self.last_resize_time = time.time()
@@ -361,6 +363,8 @@ class App:
         # print("time = ",  t - self.last_resize_time )
         if self.last_resize_time > 0 and t - self.last_resize_time < 0.05:
             return
+        debug("finish_resize true")
+        
         self.is_on_resize = False
         self.last_resize_time = 0
         self.show_image()
