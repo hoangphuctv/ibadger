@@ -2,11 +2,13 @@
 import os
 import sys
 import threading
+import time
 from datetime import datetime
 
 
 os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "hide"
 import pygame
+from pygame.locals import *
 import subprocess
 
 APP_ROOT = os.path.dirname(os.path.realpath(sys.argv[0]))
@@ -149,6 +151,8 @@ class ImageManager:
 class App:
     is_run = True
     is_fullscreen = False
+    is_on_resize = False
+    last_resize_time = 0
     X = 600
     Y = 800
     img_manager = None
@@ -166,7 +170,7 @@ class App:
     def __init__(self, active_dir):
         pygame.init()
         self.img_manager = ImageManager(active_dir)
-        self.screen = pygame.display.set_mode((self.X, self.Y))
+        self.screen = pygame.display.set_mode((self.X, self.Y), RESIZABLE)
         pygame.display.set_caption(APP_NAME)
         self.show_image()
         imageapp = os.path.join(APP_ROOT, "app.png")
@@ -333,7 +337,7 @@ class App:
 
     def fullscreen(self):
         if self.is_fullscreen:
-            self.screen = pygame.display.set_mode((self.X, self.Y))
+            self.screen = pygame.display.set_mode((self.X, self.Y), RESIZABLE)
             self.is_fullscreen = False
             self.show_image()
         else:
@@ -342,6 +346,25 @@ class App:
         self.show_image()
         pygame.display.update()
 
+    def on_resize(self):
+        if self.is_fullscreen:
+            debug("is_fullscreen = true")
+            return
+        # debug("on_resize ")
+        self.X, self.Y = self.screen.get_width(), self.screen.get_height()
+        
+        self.last_resize_time = time.time()
+        self.is_on_resize = True
+    
+    def finish_resize(self):
+        t = time.time()
+        # print("time = ",  t - self.last_resize_time )
+        if self.last_resize_time > 0 and t - self.last_resize_time < 0.05:
+            return
+        self.is_on_resize = False
+        self.last_resize_time = 0
+        self.show_image()
+    
     def quit(self):
         sys.exit()
         pygame.quit()
@@ -354,6 +377,9 @@ class App:
         clock = pygame.time.Clock()
 
         while self.is_run:
+            if self.is_on_resize:
+                self.finish_resize()
+
             clock.tick(60)
             for i in pygame.event.get():
                 if i.type == pygame.QUIT:
@@ -363,6 +389,9 @@ class App:
                     self.on_key_press(i)
                 elif i.type == pygame.MOUSEBUTTONUP:
                     self.on_mouse_click(i)
+                    debug("mouse up")
+                elif i.type == WINDOWRESIZED:
+                    self.on_resize()
                 elif i.type == pygame.MOUSEBUTTONDOWN:
                     if i.button == 4:
                         self.zoom_level_increase()
