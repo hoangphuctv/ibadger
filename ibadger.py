@@ -312,6 +312,7 @@ class App:
             self.screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
             self.is_fullscreen = True
         self.show_image()
+        pygame.display.update()
 
     def quit(self):
         sys.exit()
