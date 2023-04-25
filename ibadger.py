@@ -3,11 +3,11 @@ import os
 import sys
 import threading
 from datetime import datetime
-import magic
 
 
 os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "hide"
 import pygame
+import subprocess
 
 APP_ROOT = os.path.dirname(os.path.realpath(sys.argv[0]))
 APP_NAME = "iBadger"
@@ -31,6 +31,26 @@ def scale_img_size(w, h, maxw, maxh, ratio=1):
         w, h = w * maxh / h, maxh
     return w * ratio, h * ratio
 
+def is_windows():
+    return os.name == 'nt'
+
+
+def check_file(path):
+    if is_windows():
+        return True
+
+    ret = subprocess.run(["file", path], text=True, capture_output=True)
+    # debug("file " + path + " output=" + str(ret.stdout))
+    return str(ret.stdout).strip()
+
+def is_image(path):
+    file_info = check_file(path)
+    if file_info.find("image/") > -1:
+        return True
+    if file_info.find("image data") > -1:
+        return True
+    
+    return False
 
 class Color:
     white = 255, 255, 255
@@ -74,7 +94,7 @@ class ImageManager:
         for f in os.listdir(cwd):
             ff = os.path.join(cwd, f)
             if os.path.isfile(ff) and f.lower().endswith(SUPPORTED_EXT):
-                if magic.detect_from_filename(ff).mime_type.find("image/") == -1:
+                if not is_image(ff):
                     # not a image
                     continue
 
@@ -162,11 +182,19 @@ class App:
         if retry > 3:
             return None
         try:
-            debug("load_img path:{} retry:{}".format(path, retry))
-            return pygame.image.load(path).convert_alpha()
+            if path == self.img_manager.active_file:
+                if self.img_org:
+                    return self.img_org
+                return None
+
+            debug("load_img path:{}".format(path))
+            loaded_file = pygame.image.load(path).convert_alpha()
+            self.img_manager.active_file = path
+            return loaded_file
         except:
             self.img_manager.remove_path(path)
             path = self.img_manager.current()
+            debug("load_img path:{} retry:{}".format(path, retry))
             self.load_img(self.img_manager.current(), retry + 1)
 
     def zoom_level_reset(self):
@@ -287,7 +315,7 @@ class App:
             self.zoom_level_reset()
 
     def on_key_press(self, event):
-        debug("on_key_press = " + str(event.key))
+        # debug("on_key_press = " + str(event.key))
         key_map = {
             pygame.K_SPACE: self.fullscreen,
             pygame.K_ESCAPE: self.quit,
