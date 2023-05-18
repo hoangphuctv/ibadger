@@ -13,7 +13,7 @@ import subprocess
 
 APP_ROOT = os.path.dirname(os.path.realpath(sys.argv[0]))
 APP_NAME = "iBadger"
-SUPPORTED_EXT = (".jpg",".jpeg", ".png", "jpeg", ".bmp")
+SUPPORTED_EXT = (".jpg", ".jpeg", ".png", "jpeg", ".bmp")
 DEBUG = True
 
 
@@ -33,14 +33,16 @@ def scale_img_size(w, h, maxw, maxh, ratio=1):
         w, h = w * maxh / h, maxh
     return w * ratio, h * ratio
 
+
 def is_windows():
-    return os.name == 'nt'
+    return os.name == "nt"
 
 
 def check_file(path):
     ret = subprocess.run(["file", path], text=True, capture_output=True)
     # debug("file " + path + " output=" + str(ret.stdout))
     return str(ret.stdout).strip()
+
 
 def is_image(path):
     if is_windows():
@@ -51,8 +53,9 @@ def is_image(path):
         return True
     if file_info.find("image data") > -1:
         return True
-    
+
     return False
+
 
 class Color:
     white = 255, 255, 255
@@ -75,6 +78,11 @@ class ImageManager:
     active_file = ""
 
     def __init__(self, active_dir=""):
+        if os.path.isfile(active_dir):
+            self.active_file = os.path.basename(active_dir)
+            active_dir = os.path.dirname(active_dir)
+
+        debug("active_dir = " + active_dir)
         if active_dir == "" or active_dir == ".":
             active_dir = os.getcwd()
         elif not os.path.exists(active_dir):
@@ -83,13 +91,9 @@ class ImageManager:
         else:
             active_dir = os.path.realpath(active_dir)
 
-        if os.path.isfile(active_dir):
-            self.active_file = os.path.basename(active_dir)
-            active_dir = os.path.dirname(active_dir)
-
         self.active_dir = active_dir
         debug("Active dir: " + active_dir)
-
+        debug("Active file: " + self.active_file)
 
     def scanfile(self):
         cwd = self.active_dir
@@ -101,8 +105,9 @@ class ImageManager:
                     continue
 
                 self.files.append(ff)
-                if len(self.files) == 1:
-                    app.show_image()
+
+        if self.active_file:
+            self.set_active_file(self.active_file)
 
         app.show_image()
 
@@ -121,6 +126,14 @@ class ImageManager:
             self.index = self.count() - 1
 
         return self.files[self.index]
+
+    def set_active_file(self, file):
+        index = 0
+        for f in self.files:
+            if os.path.basename(f) == os.path.basename(file):
+                self.index = index
+                break
+            index = index + 1
 
     def next(self):
         self.index = self.index + 1
@@ -145,7 +158,7 @@ class ImageManager:
 
             i = i + 1
 
-        return None                
+        return None
 
 
 class App:
@@ -170,7 +183,7 @@ class App:
     def __init__(self, active_dir):
         pygame.init()
         self.img_manager = ImageManager(active_dir)
-        self.screen = pygame.display.set_mode((self.X, self.Y), RESIZABLE)
+        self.screen = pygame.display.set_mode((self.X, self.Y), pygame.RESIZABLE)
         pygame.display.set_caption(APP_NAME)
         self.show_image()
         imageapp = os.path.join(APP_ROOT, "app.png")
@@ -337,7 +350,7 @@ class App:
 
     def fullscreen(self):
         if self.is_fullscreen:
-            self.screen = pygame.display.set_mode((self.X, self.Y), RESIZABLE)
+            self.screen = pygame.display.set_mode((self.X, self.Y), pygame.RESIZABLE)
             self.is_fullscreen = False
             self.show_image()
         else:
@@ -347,28 +360,27 @@ class App:
         pygame.display.update()
         pygame.display.flip()
 
-
     def on_resize(self):
         if self.is_fullscreen:
             debug("is_fullscreen = true")
             return
         debug("on_resize true")
         self.X, self.Y = self.screen.get_width(), self.screen.get_height()
-        
+
         self.last_resize_time = time.time()
         self.is_on_resize = True
-    
+
     def finish_resize(self):
         t = time.time()
         # print("time = ",  t - self.last_resize_time )
         if self.last_resize_time > 0 and t - self.last_resize_time < 0.05:
             return
         debug("finish_resize true")
-        
+
         self.is_on_resize = False
         self.last_resize_time = 0
         self.show_image()
-    
+
     def quit(self):
         sys.exit()
         pygame.quit()
@@ -394,7 +406,7 @@ class App:
                 elif i.type == pygame.MOUSEBUTTONUP:
                     self.on_mouse_click(i)
                     debug("mouse up")
-                elif i.type == WINDOWRESIZED:
+                elif i.type == pygame.WINDOWRESIZED:
                     self.on_resize()
                 elif i.type == pygame.MOUSEBUTTONDOWN:
                     if i.button == 4:
