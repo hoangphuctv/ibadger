@@ -76,13 +76,16 @@ class ImageManager:
     files = []
     active_dir = ""
     active_file = ""
+    single_file_mode = False
 
     def __init__(self, active_dir=""):
         if os.path.isfile(active_dir):
+            self.single_file_mode = True
             self.active_file = os.path.basename(active_dir)
+            self.files.append(active_dir)
             active_dir = os.path.dirname(active_dir)
 
-        debug("active_dir = " + active_dir)
+
         if active_dir == "" or active_dir == ".":
             active_dir = os.getcwd()
         elif not os.path.exists(active_dir):
@@ -92,10 +95,20 @@ class ImageManager:
             active_dir = os.path.realpath(active_dir)
 
         self.active_dir = active_dir
+
         debug("Active dir: " + active_dir)
         debug("Active file: " + self.active_file)
 
+
+    def exit_single_mode(self):
+        if not self.single_file_mode:
+            return
+        self.single_file_mode = False
+        self.scanfile()
+        
     def scanfile(self):
+        if self.single_file_mode:
+            return
         cwd = self.active_dir
         for f in os.listdir(cwd):
             ff = os.path.join(cwd, f)
@@ -104,7 +117,8 @@ class ImageManager:
                     # not a image
                     continue
 
-                self.files.append(ff)
+                if ff not in self.files:
+                    self.files.append(ff)
 
         if self.active_file:
             self.set_active_file(self.active_file)
@@ -245,12 +259,14 @@ class App:
 
     def show_prev_image(self):
         self.img_manager.prev()
+        self.img_manager.exit_single_mode()
         self.img_org = self.load_img()
         self.is_change = False
         self.show_image()
 
     def show_next_image(self):
         self.img_manager.next()
+        self.img_manager.exit_single_mode()
         self.img_org = self.load_img()
         self.is_change = False
         self.show_image()
