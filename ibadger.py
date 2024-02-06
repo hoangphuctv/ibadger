@@ -366,15 +366,16 @@ class App:
 
     def fullscreen(self):
         if self.is_fullscreen:
+            # toggle window mode
             self.screen = pygame.display.set_mode((self.X, self.Y), pygame.RESIZABLE)
-            self.is_fullscreen = False
-            self.show_image()
         else:
+            # toggle fullscreen mode
             self.screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
-            self.is_fullscreen = True
+        
+        self.is_fullscreen = not self.is_fullscreen
         self.show_image()
-        pygame.display.update()
-        pygame.display.flip()
+        # pygame.display.update()
+        # pygame.display.flip()
 
     def on_resize(self):
         if self.is_fullscreen:
@@ -388,7 +389,6 @@ class App:
 
     def finish_resize(self):
         t = time.time()
-        # print("time = ",  t - self.last_resize_time )
         if self.last_resize_time > 0 and t - self.last_resize_time < 0.05:
             return
         debug("finish_resize true")
@@ -411,7 +411,7 @@ class App:
         while self.is_run:
             if self.is_on_resize:
                 self.finish_resize()
-
+            debug('ticking...')
             clock.tick(60)
             for i in pygame.event.get():
                 if i.type == pygame.QUIT:
@@ -421,7 +421,6 @@ class App:
                     self.on_key_press(i)
                 elif i.type == pygame.MOUSEBUTTONUP:
                     self.on_mouse_click(i)
-                    debug("mouse up")
                 elif i.type == pygame.WINDOWRESIZED:
                     self.on_resize()
                 elif i.type == pygame.MOUSEBUTTONDOWN:
