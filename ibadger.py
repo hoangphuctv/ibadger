@@ -1,15 +1,20 @@
 #!/usr/bin/env python3
 import os
-os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
-
-import pygame
 import sys
+import threading
+import time
 from datetime import datetime
+
+
+os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "hide"
+import pygame
+from pygame.locals import *
+import subprocess
 
 APP_ROOT = os.path.dirname(os.path.realpath(sys.argv[0]))
 APP_NAME = "iBadger"
-SUPPORTED_EXT = (".jpg", ".png", "jpeg", ".bmp")
-DEBUG = False
+SUPPORTED_EXT = (".jpg", ".jpeg", ".png", "jpeg", ".bmp")
+DEBUG = True
 
 
 def debug(txt):
@@ -27,6 +32,29 @@ def scale_img_size(w, h, maxw, maxh, ratio=1):
     if h > maxh:
         w, h = w * maxh / h, maxh
     return w * ratio, h * ratio
+
+
+def is_windows():
+    return os.name == "nt"
+
+
+def check_file(path):
+    ret = subprocess.run(["file", path], text=True, capture_output=True)
+    # debug("file " + path + " output=" + str(ret.stdout))
+    return str(ret.stdout).strip()
+
+
+def is_image(path):
+    if is_windows():
+        return True
+
+    file_info = check_file(path)
+    if not file_info.find("image/") > -1:
+        return True
+    if file_info.find("image data") > -1:
+        return True
+
+    return False
 
 
 class Color:
@@ -48,8 +76,16 @@ class ImageManager:
     files = []
     active_dir = ""
     active_file = ""
+    single_file_mode = False
 
     def __init__(self, active_dir=""):
+        if os.path.isfile(active_dir):
+            self.single_file_mode = True
+            self.active_file = os.path.basename(active_dir)
+            self.files.append(active_dir)
+            active_dir = os.path.dirname(active_dir)
+
+
         if active_dir == "" or active_dir == ".":
             active_dir = os.getcwd()
         elif not os.path.exists(active_dir):
@@ -58,22 +94,36 @@ class ImageManager:
         else:
             active_dir = os.path.realpath(active_dir)
 
-        if os.path.isfile(active_dir):
-            self.active_file = os.path.basename(active_dir)
-            active_dir = os.path.dirname(active_dir)
-
         self.active_dir = active_dir
-        allfiles = os.listdir(active_dir)
 
-        for i, x in enumerate(allfiles):
-            if not x.lower().endswith(SUPPORTED_EXT):
-                continue
-            if x is None or x == "":
-                continue
-            if self.active_file != "" and self.active_file == x:
-                self.index = self.count()
+        debug("Active dir: " + active_dir)
+        debug("Active file: " + self.active_file)
 
-            self.files.append(os.path.join(active_dir, x))
+
+    def exit_single_mode(self):
+        if not self.single_file_mode:
+            return
+        self.single_file_mode = False
+        self.scanfile()
+        
+    def scanfile(self):
+        if self.single_file_mode:
+            return
+        cwd = self.active_dir
+        for f in os.listdir(cwd):
+            ff = os.path.join(cwd, f)
+            if os.path.isfile(ff) and f.lower().endswith(SUPPORTED_EXT):
+                if not is_image(ff):
+                    # not a image
+                    continue
+
+                if ff not in self.files:
+                    self.files.append(ff)
+
+        if self.active_file:
+            self.set_active_file(self.active_file)
+
+        app.show_image()
 
     def count(self):
         return len(self.files)
@@ -91,6 +141,14 @@ class ImageManager:
 
         return self.files[self.index]
 
+    def set_active_file(self, file):
+        index = 0
+        for f in self.files:
+            if os.path.basename(f) == os.path.basename(file):
+                self.index = index
+                break
+            index = index + 1
+
     def next(self):
         self.index = self.index + 1
         return self.current()
@@ -104,16 +162,24 @@ class ImageManager:
 
     def get_loc(self):
         return (self.get_index() + 1, self.count())
-    
+
     def remove_path(self, path):
         n = self.count()
-        # for 
-        
+        i = 0
+        for f in self.files:
+            if f == path:
+                return self.files.pop(i)
+
+            i = i + 1
+
+        return None
 
 
 class App:
     is_run = True
     is_fullscreen = False
+    is_on_resize = False
+    last_resize_time = 0
     X = 600
     Y = 800
     img_manager = None
@@ -131,9 +197,9 @@ class App:
     def __init__(self, active_dir):
         pygame.init()
         self.img_manager = ImageManager(active_dir)
-        self.screen = pygame.display.set_mode((self.X, self.Y))
+        self.screen = pygame.display.set_mode((self.X, self.Y), pygame.RESIZABLE)
         pygame.display.set_caption(APP_NAME)
-        self.fullscreen()
+        self.show_image()
         imageapp = os.path.join(APP_ROOT, "app.png")
         if os.path.isfile(imageapp):
             pygame.display.set_icon(pygame.image.load(imageapp))
@@ -147,11 +213,20 @@ class App:
         if retry > 3:
             return None
         try:
-            return pygame.image.load(path).convert_alpha()
+            if path == self.img_manager.active_file:
+                if self.img_org:
+                    return self.img_org
+                return None
+
+            debug("load_img path:{}".format(path))
+            loaded_file = pygame.image.load(path).convert_alpha()
+            self.img_manager.active_file = path
+            return loaded_file
         except:
-            self.img_manager.removePath(path)
+            self.img_manager.remove_path(path)
             path = self.img_manager.current()
-            self.load_img(self.img_manager.current(), "", retry + 1)
+            debug("load_img path:{} retry:{}".format(path, retry))
+            self.load_img(self.img_manager.current(), retry + 1)
 
     def zoom_level_reset(self):
         self.zoom_level = 1
@@ -172,24 +247,26 @@ class App:
         debug("zoom_level " + str(self.zoom_level))
         self.show_image()
 
-    def show_text(self, text, pos1, pos2, center=False):
-        font = pygame.font.SysFont(None, 24)
+    def show_text(self, text, xleft, xtop, center=False):
+        font = pygame.font.SysFont("Arial", 12)
         textimg = font.render(text, True, Color.white)
         img_width = textimg.get_rect()[2]
         sw, sh = self.screen.get_size()
         if center:
-            self.screen.blit(textimg, ((sw / 2) - img_width, pos2))
+            self.screen.blit(textimg, ((sw / 2) - img_width, xtop))
         else:
-            self.screen.blit(textimg, (pos1, pos2))
+            self.screen.blit(textimg, (xleft, xtop))
 
     def show_prev_image(self):
         self.img_manager.prev()
+        self.img_manager.exit_single_mode()
         self.img_org = self.load_img()
         self.is_change = False
         self.show_image()
 
     def show_next_image(self):
         self.img_manager.next()
+        self.img_manager.exit_single_mode()
         self.img_org = self.load_img()
         self.is_change = False
         self.show_image()
@@ -207,6 +284,10 @@ class App:
             self.img_org = self.load_img()
 
         self.img = self.img_org
+
+        if self.img is None:
+            return
+
         rect = self.img.get_rect()
 
         img_width = rect[2]
@@ -232,13 +313,13 @@ class App:
                 os.path.basename(self.img_manager.current()),
             )
 
-        self.show_text(text, 20, 30)
+        self.show_text(text, 20, 20)
         pygame.display.flip()
 
     def show_status(self, text):
         self.screen.fill(Color.gray)
         self.screen.blit(self.img, (self.start_x, self.start_y))
-        self.show_text(text, 20, 30)
+        self.show_text(text, 20, 20)
         pygame.display.flip()
 
     def rotate_image_right(self):
@@ -267,7 +348,7 @@ class App:
             self.zoom_level_reset()
 
     def on_key_press(self, event):
-        debug("on_key_press = " + str(event.key))
+        # debug("on_key_press = " + str(event.key))
         key_map = {
             pygame.K_SPACE: self.fullscreen,
             pygame.K_ESCAPE: self.quit,
@@ -285,20 +366,53 @@ class App:
 
     def fullscreen(self):
         if self.is_fullscreen:
-            self.screen = pygame.display.set_mode((self.X, self.Y))
+            self.screen = pygame.display.set_mode((self.X, self.Y), pygame.RESIZABLE)
             self.is_fullscreen = False
             self.show_image()
         else:
             self.screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
             self.is_fullscreen = True
         self.show_image()
+        pygame.display.update()
+        pygame.display.flip()
+
+    def on_resize(self):
+        if self.is_fullscreen:
+            debug("is_fullscreen = true")
+            return
+        debug("on_resize true")
+        self.X, self.Y = self.screen.get_width(), self.screen.get_height()
+
+        self.last_resize_time = time.time()
+        self.is_on_resize = True
+
+    def finish_resize(self):
+        t = time.time()
+        # print("time = ",  t - self.last_resize_time )
+        if self.last_resize_time > 0 and t - self.last_resize_time < 0.05:
+            return
+        debug("finish_resize true")
+
+        self.is_on_resize = False
+        self.last_resize_time = 0
+        self.show_image()
 
     def quit(self):
-        pygame.quit()
         sys.exit()
+        pygame.quit()
+
+    def check_exit(self):
+        if self.is_run is False:
+            self.quit()
 
     def run(self):
+        clock = pygame.time.Clock()
+
         while self.is_run:
+            if self.is_on_resize:
+                self.finish_resize()
+
+            clock.tick(60)
             for i in pygame.event.get():
                 if i.type == pygame.QUIT:
                     self.is_run = False
@@ -307,6 +421,9 @@ class App:
                     self.on_key_press(i)
                 elif i.type == pygame.MOUSEBUTTONUP:
                     self.on_mouse_click(i)
+                    debug("mouse up")
+                elif i.type == pygame.WINDOWRESIZED:
+                    self.on_resize()
                 elif i.type == pygame.MOUSEBUTTONDOWN:
                     if i.button == 4:
                         self.zoom_level_increase()
@@ -321,5 +438,9 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         active_dir = sys.argv[1]
     app = App(active_dir)
+
+    # th_scanfile = threading.Thread(target=app.img_manager.scanfile, args=())
+    # th_scanfile.start()
+
+    app.img_manager.scanfile()
     app.run()
-    app.quit()
