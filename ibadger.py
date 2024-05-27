@@ -14,7 +14,7 @@ import subprocess
 APP_ROOT = os.path.dirname(os.path.realpath(sys.argv[0]))
 APP_NAME = "iBadger"
 SUPPORTED_EXT = (".jpg", ".jpeg", ".png", "jpeg", ".bmp")
-DEBUG = True
+DEBUG = False
 
 
 def debug(txt):
