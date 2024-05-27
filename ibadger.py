@@ -339,6 +339,19 @@ class App:
             self.show_status("save ok " + self.img_manager.current())
             self.is_change = False
 
+    def delete_image(self):
+        fpath = self.img_manager.current()
+        if os.path.isfile(fpath):
+            debug("remove img path: {}".format(fpath))
+            os.remove(fpath)
+            self.img_manager.remove_path(fpath)
+
+        self.img_manager.next()
+        self.img_manager.exit_single_mode()
+        self.img_org = self.load_img()
+        self.is_change = False
+        self.show_image()
+    
     def on_mouse_click(self, event):
         if event.button == Mouse.LEFT:
             self.show_next_image()
@@ -358,6 +371,7 @@ class App:
             pygame.K_l: self.rotate_image_left,
             pygame.K_s: self.save_change,
             pygame.K_q: self.quit,
+            pygame.K_d: self.delete_image,
             pygame.K_0: self.zoom_level_reset,
         }
         do_action = key_map.get(event.key, None)
@@ -411,7 +425,7 @@ class App:
         while self.is_run:
             if self.is_on_resize:
                 self.finish_resize()
-            debug('ticking...')
+            # debug('ticking...')
             clock.tick(60)
             for i in pygame.event.get():
                 if i.type == pygame.QUIT:
