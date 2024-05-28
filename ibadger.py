@@ -197,7 +197,8 @@ class App:
     def __init__(self, active_dir):
         pygame.init()
         self.img_manager = ImageManager(active_dir)
-        self.screen = pygame.display.set_mode((self.X, self.Y), pygame.RESIZABLE)
+        self.screen = pygame.display.set_mode((0, 0), pygame.RESIZABLE)
+        self.X, self.Y = self.screen.get_width(), self.screen.get_height()
         pygame.display.set_caption(APP_NAME)
         self.show_image()
         imageapp = os.path.join(APP_ROOT, "app.png")
@@ -387,9 +388,9 @@ class App:
             self.screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
         
         self.is_fullscreen = not self.is_fullscreen
+        pygame.display.update()
+        pygame.display.flip()
         self.show_image()
-        # pygame.display.update()
-        # pygame.display.flip()
 
     def on_resize(self):
         if self.is_fullscreen:
