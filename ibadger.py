@@ -149,12 +149,12 @@ class ImageManager:
                 break
             index = index + 1
 
-    def next(self):
-        self.index = self.index + 1
+    def next(self, num=1):
+        self.index = self.index + num
         return self.current()
 
-    def prev(self):
-        self.index = self.index - 1
+    def prev(self, num=1):
+        self.index = self.index - num
         return self.current()
 
     def get_index(self):
@@ -257,6 +257,13 @@ class App:
             self.screen.blit(textimg, ((sw / 2) - img_width, xtop))
         else:
             self.screen.blit(textimg, (xleft, xtop))
+        
+    def show_prev_page(self):
+        self.img_manager.prev(10)
+        self.img_manager.exit_single_mode()
+        self.img_org = self.load_img()
+        self.is_change = False
+        self.show_image()
 
     def show_prev_image(self):
         self.img_manager.prev()
@@ -265,8 +272,16 @@ class App:
         self.is_change = False
         self.show_image()
 
-    def show_next_image(self):
-        self.img_manager.next()
+    def show_next_page(self):
+        self.img_manager.next(10)
+        self.img_manager.exit_single_mode()
+        self.img_org = self.load_img()
+        self.is_change = False
+        self.show_image()
+
+
+    def show_next_image(self, num=1):
+        self.img_manager.next(num)
         self.img_manager.exit_single_mode()
         self.img_org = self.load_img()
         self.is_change = False
@@ -275,7 +290,10 @@ class App:
     def show_image(self):
         self.screen.fill(Color.gray)
         sw, sh = self.screen.get_size()
+
         imgpath = self.img_manager.current()
+        debug("show_image {}x{}, path={}".format(sw,sh, imgpath))
+
         if imgpath is None:
             self.show_text("No image", 0, sh / 2, True)
             pygame.display.flip()
@@ -287,6 +305,7 @@ class App:
         self.img = self.img_org
 
         if self.img is None:
+            debug("show_image none")
             return
 
         rect = self.img.get_rect()
@@ -362,11 +381,14 @@ class App:
             self.zoom_level_reset()
 
     def on_key_press(self, event):
-        # debug("on_key_press = " + str(event.key))
+        debug("on_key_press = " + str(event.key))
         key_map = {
             pygame.K_SPACE: self.fullscreen,
             pygame.K_ESCAPE: self.quit,
             pygame.K_RIGHT: self.show_next_image,
+            pygame.K_LEFT: self.show_prev_image,
+            pygame.K_PAGEDOWN: self.show_next_page,
+            pygame.K_PAGEUP: self.show_prev_page,
             pygame.K_LEFT: self.show_prev_image,
             pygame.K_r: self.rotate_image_right,
             pygame.K_l: self.rotate_image_left,
