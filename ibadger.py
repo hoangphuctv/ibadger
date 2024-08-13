@@ -197,7 +197,7 @@ class App:
     def __init__(self, active_dir):
         pygame.init()
         self.img_manager = ImageManager(active_dir)
-        self.screen = pygame.display.set_mode((0, 0), pygame.RESIZABLE)
+        self.screen = pygame.display.set_mode((800, 600), pygame.RESIZABLE)
         self.X, self.Y = self.screen.get_width(), self.screen.get_height()
         pygame.display.set_caption(APP_NAME)
         self.show_image()
