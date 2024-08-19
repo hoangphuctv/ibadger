@@ -249,6 +249,9 @@ class App:
         self.show_image()
 
     def show_text(self, text, xleft, xtop, center=False):
+        if not self.is_fullscreen:
+            pygame.display.set_caption(APP_NAME + " " + text)
+            return
         font = pygame.font.SysFont("Arial", 12)
         textimg = font.render(text, True, Color.white)
         img_width = textimg.get_rect()[2]
