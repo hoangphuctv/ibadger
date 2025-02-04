@@ -79,12 +79,19 @@ class ImageManager:
     single_file_mode = False
 
     def __init__(self, active_dir=""):
+        self.set_path(active_dir)
+
+    def set_path(self, active_dir):
+        self.files = []
+        self.active_dir = ""
+        self.active_file = ""
+        self.single_file_mode = False
+
         if os.path.isfile(active_dir):
             self.single_file_mode = True
             self.active_file = os.path.basename(active_dir)
             self.files.append(active_dir)
             active_dir = os.path.dirname(active_dir)
-
 
         if active_dir == "" or active_dir == ".":
             active_dir = os.getcwd()
@@ -105,10 +112,11 @@ class ImageManager:
             return
         self.single_file_mode = False
         self.scanfile()
-        
+
     def scanfile(self):
         if self.single_file_mode:
             return
+        self.files = []
         cwd = self.active_dir
         for f in os.listdir(cwd):
             ff = os.path.join(cwd, f)
@@ -146,7 +154,7 @@ class ImageManager:
         for f in self.files:
             if os.path.basename(f) == os.path.basename(file):
                 self.index = index
-                break
+                return
             index = index + 1
 
     def next(self, num=1):
@@ -193,6 +201,7 @@ class App:
     max_height = 0
     is_change = False
     zoom_level = 1
+    events = {}
 
     def __init__(self, active_dir):
         pygame.init()
@@ -205,7 +214,15 @@ class App:
         if os.path.isfile(imageapp):
             pygame.display.set_icon(pygame.image.load(imageapp))
 
+    def addEvent(self, type, callback):
+        self.events[type] = callback
+
+    def triggerEvent(self, event):
+        if event.type in self.events and callable(self.events[event.type]):
+            self.events[event.type](event)
+
     def load_img(self, path="", retry=1):
+        debug("load_img " + path)
         if path == "":
             path = self.img_manager.current()
 
@@ -249,6 +266,9 @@ class App:
         self.show_image()
 
     def show_text(self, text, xleft, xtop, center=False):
+        if not self.is_fullscreen:
+            pygame.display.set_caption(APP_NAME + " " + text)
+            return
         font = pygame.font.SysFont("Arial", 12)
         textimg = font.render(text, True, Color.white)
         img_width = textimg.get_rect()[2]
@@ -257,35 +277,31 @@ class App:
             self.screen.blit(textimg, ((sw / 2) - img_width, xtop))
         else:
             self.screen.blit(textimg, (xleft, xtop))
-        
-    def show_prev_page(self):
-        self.img_manager.prev(10)
-        self.img_manager.exit_single_mode()
+
+    def show_cur_img(self):
         self.img_org = self.load_img()
         self.is_change = False
         self.show_image()
+
+    def show_prev_page(self):
+        self.img_manager.prev(10)
+        self.img_manager.exit_single_mode()
 
     def show_prev_image(self):
         self.img_manager.prev()
         self.img_manager.exit_single_mode()
-        self.img_org = self.load_img()
-        self.is_change = False
-        self.show_image()
+        self.show_cur_img()
 
     def show_next_page(self):
         self.img_manager.next(10)
         self.img_manager.exit_single_mode()
-        self.img_org = self.load_img()
-        self.is_change = False
-        self.show_image()
+        self.show_cur_img()
 
 
     def show_next_image(self, num=1):
         self.img_manager.next(num)
         self.img_manager.exit_single_mode()
-        self.img_org = self.load_img()
-        self.is_change = False
-        self.show_image()
+        self.show_cur_img()
 
     def show_image(self):
         self.screen.fill(Color.gray)
@@ -335,6 +351,10 @@ class App:
 
         self.show_text(text, 20, 20)
         pygame.display.flip()
+        debug("show_image ok")
+        if self.img_manager.single_file_mode : 
+            debug("self.single_file_mode = true")
+
 
     def show_status(self, text):
         self.screen.fill(Color.gray)
@@ -371,7 +391,13 @@ class App:
         self.img_org = self.load_img()
         self.is_change = False
         self.show_image()
-    
+
+    def on_mouse_down(self, event):
+        if event.button == 4:
+            self.zoom_level_increase()
+        elif event.button == 5:
+            self.zoom_level_decrease()
+
     def on_mouse_click(self, event):
         if event.button == Mouse.LEFT:
             self.show_next_image()
@@ -408,13 +434,13 @@ class App:
         else:
             # toggle fullscreen mode
             self.screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
-        
+
         self.is_fullscreen = not self.is_fullscreen
         pygame.display.update()
         pygame.display.flip()
         self.show_image()
 
-    def on_resize(self):
+    def on_resize(self, event):
         if self.is_fullscreen:
             debug("is_fullscreen = true")
             return
@@ -433,6 +459,11 @@ class App:
         self.is_on_resize = False
         self.last_resize_time = 0
         self.show_image()
+    
+    def on_dropfile(self, event):
+        print("on_dropfile", event.file)
+        self.img_manager.set_path(event.file)
+        self.show_cur_img()
 
     def quit(self):
         sys.exit()
@@ -445,6 +476,12 @@ class App:
     def run(self):
         clock = pygame.time.Clock()
 
+        self.addEvent(pygame.KEYDOWN, self.on_key_press)
+        self.addEvent(pygame.MOUSEBUTTONUP, self.on_mouse_click)
+        self.addEvent(pygame.MOUSEBUTTONDOWN, self.on_mouse_down)
+        self.addEvent(pygame.WINDOWRESIZED, self.on_resize)
+        self.addEvent(pygame.DROPFILE, self.on_dropfile)
+
         while self.is_run:
             if self.is_on_resize:
                 self.finish_resize()
@@ -454,17 +491,7 @@ class App:
                 if i.type == pygame.QUIT:
                     self.is_run = False
                     break
-                elif i.type == pygame.KEYDOWN:
-                    self.on_key_press(i)
-                elif i.type == pygame.MOUSEBUTTONUP:
-                    self.on_mouse_click(i)
-                elif i.type == pygame.WINDOWRESIZED:
-                    self.on_resize()
-                elif i.type == pygame.MOUSEBUTTONDOWN:
-                    if i.button == 4:
-                        self.zoom_level_increase()
-                    elif i.button == 5:
-                        self.zoom_level_decrease()
+                self.triggerEvent(i)
 
         self.quit()
 
