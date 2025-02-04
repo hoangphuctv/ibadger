@@ -28,3 +28,8 @@ Install requirements packages in new machine
 pip install -U -r requirements.txt
 
 ```
+
+---
+## Last changes:
+
+- When open a random image in folder, press NEXT, reset to first image. FIX: Go to next image, not first image.

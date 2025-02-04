@@ -116,6 +116,7 @@ class ImageManager:
     def scanfile(self):
         if self.single_file_mode:
             return
+        self.files = []
         cwd = self.active_dir
         for f in os.listdir(cwd):
             ff = os.path.join(cwd, f)
@@ -153,7 +154,7 @@ class ImageManager:
         for f in self.files:
             if os.path.basename(f) == os.path.basename(file):
                 self.index = index
-                break
+                return
             index = index + 1
 
     def next(self, num=1):
@@ -221,6 +222,7 @@ class App:
             self.events[event.type](event)
 
     def load_img(self, path="", retry=1):
+        debug("load_img " + path)
         if path == "":
             path = self.img_manager.current()
 
@@ -489,7 +491,6 @@ class App:
                 if i.type == pygame.QUIT:
                     self.is_run = False
                     break
-                
                 self.triggerEvent(i)
 
         self.quit()
