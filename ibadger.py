@@ -284,23 +284,23 @@ class App:
         self.show_image()
 
     def show_prev_page(self):
-        self.img_manager.prev(10)
         self.img_manager.exit_single_mode()
+        self.img_manager.prev(10)
 
     def show_prev_image(self):
-        self.img_manager.prev()
         self.img_manager.exit_single_mode()
+        self.img_manager.prev()
         self.show_cur_img()
 
     def show_next_page(self):
-        self.img_manager.next(10)
         self.img_manager.exit_single_mode()
+        self.img_manager.next(10)
         self.show_cur_img()
 
 
     def show_next_image(self, num=1):
-        self.img_manager.next(num)
         self.img_manager.exit_single_mode()
+        self.img_manager.next(num)
         self.show_cur_img()
 
     def show_image(self):
@@ -386,8 +386,8 @@ class App:
             os.remove(fpath)
             self.img_manager.remove_path(fpath)
 
-        self.img_manager.next()
         self.img_manager.exit_single_mode()
+        self.img_manager.next()
         self.img_org = self.load_img()
         self.is_change = False
         self.show_image()
